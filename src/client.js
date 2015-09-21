@@ -3,20 +3,23 @@
  */
 import 'babel/polyfill';
 import React from 'react';
+import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import Router from 'react-router';
 import { createHistory, useQueries } from 'history';
 import createStore from './redux/create';
 import ApiClient from './helpers/ApiClient';
+import createRoutes from './routes';
 
 const history = useQueries(createHistory)();
 const client = new ApiClient();
 const dest = document.getElementById('content');
 const store = createStore(client, window.__data);
+const routes = createRoutes(store);
 
 const component = (
   <Provider store={store} key="provider">
-    {() => <Router routes={routes} history={history} />}
+    <Router routes={routes} history={history} />
   </Provider>
 );
 
@@ -24,14 +27,14 @@ if (__DEVTOOLS__) {
   const { DevTools, DebugPanel, LogMonitor } = require('redux-devtools/lib/react');
   console.info('You will see a "Warning: React attempted to reuse markup in a container but the checksum was' +
     ' invalid." message. That\'s because the redux-devtools are enabled.');
-  React.render(<div>
+  ReactDOM.render(<div>
     {component}
     <DebugPanel top right bottom key="debugPanel">
       <DevTools store={store} monitor={LogMonitor}/>
     </DebugPanel>
   </div>, dest);
 } else {
-  React.render(component, dest);
+  ReactDOM.render(component, dest);
 }
 
 if (process.env.NODE_ENV !== 'production') {

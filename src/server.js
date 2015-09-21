@@ -82,14 +82,12 @@ app.use((req, res) => {
     } else {
       const component = (
         <Provider store={store} key="provider">
-          {() => <RoutingContext {...renderProps}/>}
+          <RoutingContext {...renderProps}/>
         </Provider>
       );
 
-      const wtf = webpackIsomorphicTools.assets();
-      console.log(wtf);
       res.send('<!doctype html>\n' +
-        renderToString(<Html assets={wtf} component={component} store={store}/>));
+        renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>));
     }
   });
 });

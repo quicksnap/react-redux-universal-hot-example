@@ -1,4 +1,5 @@
 import React from 'react/addons';
+import ReactDOM from 'react-dom';
 import { expect} from 'chai';
 import { InfoBar } from 'components';
 import { Provider } from 'react-redux';
@@ -26,7 +27,7 @@ describe('InfoBar', () => {
       {() => <InfoBar/>}
     </Provider>
   );
-  const dom = React.findDOMNode(renderer);
+  const dom = ReactDOM.findDOMNode(renderer);
 
   it('should render correctly', () => {
     expect(renderer).to.be.ok;
