@@ -65,29 +65,59 @@ app.use((req, res) => {
     return;
   }
 
+  function getFetchData(component = {}) {
+    return component.WrappedComponent ?
+      getFetchData(component.WrappedComponent) :
+      component.fetchData;
+  }
+
+  function fetchRouteData(components, callback) {
+    const promises = components
+      .filter((component) => getFetchData(component))   // only look at ones with a static fetchData()
+      .map(getFetchData)                                // pull out fetch data methods
+      .map(fetchData => fetchData(store, req.params, req.query || {}));   // call fetch data methods and save promises
+
+    Promise.all(promises)
+      .then(() => {
+        callback(); // can't just pass callback to then() because callback assumes first param is error
+      }, (error) => {
+        callback(error);
+      });
+  }
+
+  function hydrateErrorToClient(error) {
+    // let client render error page or re-request data
+    console.error('ROUTER ERROR:', pretty.render(error));
+    hydrateOnClient();
+  }
+
   match({ routes, location }, (error, redirectLocation, renderProps) => {
     if (redirectLocation) {
       res.redirect(301, redirectLocation.pathname + redirectLocation.search);
     } else if (error || renderProps === null) {
-
       // TODO: Is this correct? Is it working? This whole block needs testing
       if (error && error.redirect) {
         res.redirect(error.redirect);
         return;
       }
-      console.error('ROUTER ERROR:', pretty.render(error));
 
-      // let client render error page or re-request data
-      hydrateOnClient();
+      hydrateErrorToClient(error);
     } else {
-      const component = (
-        <Provider store={store} key="provider">
-          <RoutingContext {...renderProps}/>
-        </Provider>
-      );
+      fetchRouteData(renderProps.components, (err) => {
+        if (err) {
+          hydrateErrorToClient(err);
+        }
 
-      res.send('<!doctype html>\n' +
-        renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>));
+        const component = (
+          <Provider store={store} key='provider'>
+            <RoutingContext {...renderProps}/>
+          </Provider>
+        );
+
+        const domStr = renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>);
+
+        res.send('<!doctype html>\n' + domStr);
+      });
     }
   });
 });

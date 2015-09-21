@@ -18,8 +18,8 @@ const store = createStore(client, window.__data);
 const routes = createRoutes(store);
 
 const component = (
-  <Provider store={store} key="provider">
-    <Router routes={routes} history={history} />
+  <Provider store={store} key='provider'>
+    <Router children={routes} history={history} />
   </Provider>
 );
 
@@ -29,7 +29,7 @@ if (__DEVTOOLS__) {
     ' invalid." message. That\'s because the redux-devtools are enabled.');
   ReactDOM.render(<div>
     {component}
-    <DebugPanel top right bottom key="debugPanel">
+    <DebugPanel top right bottom key='debugPanel'>
       <DevTools store={store} monitor={LogMonitor}/>
     </DebugPanel>
   </div>, dest);

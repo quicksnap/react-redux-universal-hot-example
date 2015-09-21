@@ -48,11 +48,11 @@ export default class App extends Component {
     store: PropTypes.object.isRequired
   };
 
-  // componentWillMount() {
-  //   const {router, store} = this.context;
-  //   this.transitionHook = createTransitionHook(store);
-  //   router.addTransitionHook(this.transitionHook);
-  // }
+  componentWillMount() {
+    const {router, store} = this.context;
+    this.transitionHook = () => {};
+    // router.addTransitionHook(this.transitionHook);
+  }
 
   componentWillReceiveProps(nextProps) {
     if (!this.props.user && nextProps.user) {
@@ -67,10 +67,10 @@ export default class App extends Component {
     }
   }
 
-  // componentWillUnmount() {
-  //   const {router} = this.context;
-  //   router.removeTransitionHook(this.transitionHook);
-  // }
+  componentWillUnmount() {
+    const {router} = this.context;
+    // router.removeTransitionHook(this.transitionHook);
+  }
 
   static fetchData(store) {
     const promises = [];
