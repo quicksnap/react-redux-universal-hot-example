@@ -1,14 +1,18 @@
 import Express from 'express';
 import React from 'react';
-import Location from 'react-router/lib/Location';
+import { renderToString } from 'react-dom/server';
+import { createLocation } from 'history';
+import { RoutingContext, match } from 'react-router';
+import {Provider} from 'react-redux';
 import config from './config';
+import createRoutes from './routes';
 import favicon from 'serve-favicon';
 import compression from 'compression';
 import httpProxy from 'http-proxy';
 import path from 'path';
 import createStore from './redux/create';
 import ApiClient from './helpers/ApiClient';
-import universalRouter from './helpers/universalRouter';
+// import universalRouter from './helpers/universalRouter';
 import Html from './helpers/Html';
 import PrettyError from 'pretty-error';
 
@@ -48,11 +52,12 @@ app.use((req, res) => {
   }
   const client = new ApiClient(req);
   const store = createStore(client);
-  const location = new Location(req.path, req.query);
+  const routes = createRoutes(store);
+  const location = createLocation(req.url);
 
   function hydrateOnClient() {
     res.send('<!doctype html>\n' +
-      React.renderToString(<Html assets={webpackIsomorphicTools.assets()} component={<div/>} store={store}/>));
+      renderToString(<Html assets={webpackIsomorphicTools.assets()} component={<div/>} store={store}/>));
   }
 
   if (__DISABLE_SSR__) {
@@ -60,23 +65,33 @@ app.use((req, res) => {
     return;
   }
 
-  universalRouter(location, undefined, store)
-    .then(({component, transition, isRedirect}) => {
-      if (isRedirect) {
-        res.redirect(transition.redirectInfo.pathname);
-        return;
-      }
-      res.send('<!doctype html>\n' +
-        React.renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>));
-    })
-    .catch((error) => {
-      if (error.redirect) {
+  match({ routes, location }, (error, redirectLocation, renderProps) => {
+    if (redirectLocation) {
+      res.redirect(301, redirectLocation.pathname + redirectLocation.search);
+    } else if (error || renderProps === null) {
+
+      // TODO: Is this correct? Is it working? This whole block needs testing
+      if (error && error.redirect) {
         res.redirect(error.redirect);
         return;
       }
       console.error('ROUTER ERROR:', pretty.render(error));
-      hydrateOnClient(); // let client render error page or re-request data
-    });
+
+      // let client render error page or re-request data
+      hydrateOnClient();
+    } else {
+      const component = (
+        <Provider store={store} key="provider">
+          {() => <RoutingContext {...renderProps}/>}
+        </Provider>
+      );
+
+      const wtf = webpackIsomorphicTools.assets();
+      console.log(wtf);
+      res.send('<!doctype html>\n' +
+        renderToString(<Html assets={wtf} component={component} store={store}/>));
+    }
+  });
 });
 
 if (config.port) {
