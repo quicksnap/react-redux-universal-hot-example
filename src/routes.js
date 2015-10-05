@@ -13,6 +13,10 @@ import {
     NotFound,
   } from 'containers';
 
+const goSomewhereElse = (nextState, replaceState) => {
+  replaceState({}, '/login');
+};
+
 export default function(history) {
   return (
     <Route component={App} history={history}>
@@ -20,6 +24,7 @@ export default function(history) {
       <Route path="/widgets" component={Widgets}/>
       <Route path="/about" component={About}/>
       <Route path="/login" component={Login}/>
+      <Route path="/foo" component={Survey} onEnter={goSomewhereElse}/>
       <Route component={RequireLogin}>
         <Route path="/chat" component={Chat}/>
         <Route path="/loginSuccess" component={LoginSuccess}/>
