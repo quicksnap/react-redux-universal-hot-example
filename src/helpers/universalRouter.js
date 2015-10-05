@@ -22,15 +22,20 @@ const fetchDataForContainers = (containers, store, params, query) => {
 export default function universalRouter(location, history, store, preload) {
   const routes = createRoutes(history);
   return new Promise((resolve, reject) => {
-    match({routes, history, location}, (error, redirectLocation, renderProps) => {
+    const matchCallback = (error, redirectLocation, renderProps) => {
       if (error) {
         return reject(error);
       }
 
       if (redirectLocation) {
-        return resolve({
-          redirectLocation
-        });
+        if (history) {
+          history.replaceState(null, redirectLocation.pathname);
+          match({routes, history, location: redirectLocation}, matchCallback);
+        } else {
+          return resolve({
+            redirectLocation
+          });
+        }
       }
 
       function resolveWithComponent() {
@@ -56,6 +61,8 @@ export default function universalRouter(location, history, store, preload) {
       } else {
         resolveWithComponent();
       }
-    });
+    };
+
+    match({routes, history, location}, matchCallback);
   });
 }
