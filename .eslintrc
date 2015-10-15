@@ -29,7 +29,10 @@
     "react", "import"
   ],
   "settings": { 
-    "import/parser": "babel-eslint" 
+    "import/parser": "babel-eslint",
+    "import/resolve": {
+      moduleDirectory: ["node_modules", "src"]
+    }
   }
   "globals": {
     "__DEVELOPMENT__": true,
