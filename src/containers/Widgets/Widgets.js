@@ -5,6 +5,7 @@ import * as widgetActions from 'redux/modules/widgets';
 import {isLoaded, load as loadWidgets} from 'redux/modules/widgets';
 import {initializeWithKey} from 'redux-form';
 import { WidgetForm } from 'components';
+import { bindActionCreatorsSafe } from 'helpers/safeDispatch';
 
 @connect(
   state => ({
@@ -13,7 +14,8 @@ import { WidgetForm } from 'components';
     error: state.widgets.error,
     loading: state.widgets.loading
   }),
-  {...widgetActions, initializeWithKey })
+  bindActionCreatorsSafe({...widgetActions, initializeWithKey })
+)
 export default
 class Widgets extends Component {
   static propTypes = {
