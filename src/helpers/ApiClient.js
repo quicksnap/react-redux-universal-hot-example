@@ -13,7 +13,7 @@ function formatUrl(path) {
   return '/api' + adjustedPath;
 }
 
-export default class ApiClient {
+class _ApiClient {
   constructor(req) {
     methods.forEach((method) =>
       this[method] = (path, { params, data } = {}) => new Promise((resolve, reject) => {
@@ -35,3 +35,7 @@ export default class ApiClient {
       }));
   }
 }
+
+const ApiClient = _ApiClient;
+
+export default ApiClient;
