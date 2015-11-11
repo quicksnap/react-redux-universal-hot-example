@@ -9,15 +9,17 @@ import createStore from './redux/create';
 import ApiClient from './helpers/ApiClient';
 import io from 'socket.io-client';
 import {Provider} from 'react-redux';
-import {reduxReactRouter, ReduxRouter} from 'redux-router';
-
+import {Router} from 'react-router';
+import {syncReduxAndRouter} from 'redux-simple-router';
 import getRoutes from './routes';
-import makeRouteHooksSafe from './helpers/makeRouteHooksSafe';
 
 const client = new ApiClient();
 
 const dest = document.getElementById('content');
-const store = createStore(reduxReactRouter, makeRouteHooksSafe(getRoutes), createHistory, client, window.__data);
+const store = createStore(client, window.__data);
+const history = createHistory();
+
+syncReduxAndRouter(history, store);
 
 function initSocket() {
   const socket = io('', {path: '/api/ws', transports: ['polling']});
@@ -34,8 +36,18 @@ function initSocket() {
 
 global.socket = initSocket();
 
+function createElement(Component, props) {
+  if (Component.fetchData) {
+    Component.fetchData(store.getState, store.dispatch,
+                        props.location, props.params);
+  }
+  return React.createElement(Component, props);
+}
+
 const component = (
-  <ReduxRouter routes={getRoutes(store)} />
+  <Router createElement={createElement} history={history}>
+    {getRoutes(store)}
+  </Router>
 );
 
 ReactDOM.render(

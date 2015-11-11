@@ -13,13 +13,13 @@ import PrettyError from 'pretty-error';
 import http from 'http';
 import SocketIo from 'socket.io';
 
-import {ReduxRouter} from 'redux-router';
+import {Router, RoutingContext, match} from 'react-router';
 import createHistory from 'history/lib/createMemoryHistory';
-import {reduxReactRouter, match} from 'redux-router/server';
 import {Provider} from 'react-redux';
 import qs from 'query-string';
 import getRoutes from './routes';
 import getStatusFromRoutes from './helpers/getStatusFromRoutes';
+import fetchAllData from './helpers/fetchAllData';
 
 const pretty = new PrettyError();
 const app = new Express();
@@ -60,8 +60,7 @@ app.use((req, res) => {
     webpackIsomorphicTools.refresh();
   }
   const client = new ApiClient(req);
-
-  const store = createStore(reduxReactRouter, getRoutes, createHistory, client);
+  const store = createStore(client);
 
   function hydrateOnClient() {
     res.send('<!doctype html>\n' +
@@ -73,43 +72,46 @@ app.use((req, res) => {
     return;
   }
 
-  store.dispatch(match(req.originalUrl, (error, redirectLocation, routerState) => {
+  match({ routes: getRoutes(store),
+          location: req.originalUrl }, (error, redirectLocation, renderProps) => {
     if (redirectLocation) {
       res.redirect(redirectLocation.pathname + redirectLocation.search);
     } else if (error) {
       console.error('ROUTER ERROR:', pretty.render(error));
       res.status(500);
       hydrateOnClient();
-    } else if (!routerState) {
+    } else if (!renderProps) {
       res.status(500);
       hydrateOnClient();
     } else {
-      // Workaround redux-router query string issue:
-      // https://github.com/rackt/redux-router/issues/106
-      if (routerState.location.search && !routerState.location.query) {
-        routerState.location.query = qs.parse(routerState.location.search);
+      try {
+        fetchAllData(
+          renderProps.components,
+          store.getState, store.dispatch,
+          renderProps.location,
+          renderProps.params
+        ).then(() => {
+          const component = (
+              <Provider store={store} key="provider">
+              <RoutingContext {...renderProps}/>
+              </Provider>
+          );
+
+          const status = getStatusFromRoutes(renderProps.routes);
+          if (status) {
+            res.status(status);
+          }
+          res.send('<!doctype html>\n' +
+                   ReactDOM.renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>));
+        });
       }
-
-      store.getState().router.then(() => {
-        const component = (
-          <Provider store={store} key="provider">
-            <ReduxRouter/>
-          </Provider>
-        );
-
-        const status = getStatusFromRoutes(routerState.routes);
-        if (status) {
-          res.status(status);
-        }
-        res.send('<!doctype html>\n' +
-          ReactDOM.renderToString(<Html assets={webpackIsomorphicTools.assets()} component={component} store={store}/>));
-      }).catch((err) => {
+      catch(err) {
         console.error('DATA FETCHING ERROR:', pretty.render(err));
         res.status(500);
         hydrateOnClient();
-      });
+      }
     }
-  }));
+  });
 });
 
 if (config.port) {
