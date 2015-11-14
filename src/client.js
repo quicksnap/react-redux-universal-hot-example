@@ -38,11 +38,11 @@ global.socket = initSocket();
 
 function createElement(Component, props) {
   if (Component.fetchData) {
-    Component.fetchData(store.getState, store.dispatch,
-                        props.location, props.params);
+    setTimeout(() => {
+      Component.fetchData(store.getState, store.dispatch, props.location, props.params);
+    }, 0);
   }
   return React.createElement(Component, props);
-}
 
 const component = (
   <Router createElement={createElement} history={history}>
