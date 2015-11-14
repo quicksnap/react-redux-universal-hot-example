@@ -43,6 +43,7 @@ function createElement(Component, props) {
     }, 0);
   }
   return React.createElement(Component, props);
+}
 
 const component = (
   <Router createElement={createElement} history={history}>
