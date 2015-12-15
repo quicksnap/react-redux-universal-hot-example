@@ -11,6 +11,7 @@
  */
 
 module.exports = {
+  styleLoader: 'style-loader!raw-loader!sass-loader',
   preBootstrapCustomizations: './src/theme/variables.scss',
   mainSass: './src/theme/bootstrap.overrides.scss',
   verbose: false,
